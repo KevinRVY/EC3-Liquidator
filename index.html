@@ -110,11 +110,10 @@
             </div>
 
             <div class="actions-area">
-                <button id="btn-pdf" class="action-btn pdf-btn">Descargar Expediente PDF</button>
-                <button id="btn-wsp" class="action-btn wsp-btn">Enviar Copia por WhatsApp</button>
+                <button type="button" id="btn-pdf" class="action-btn pdf-btn">Descargar Expediente PDF</button>
+                <button type="button" id="btn-wsp" class="action-btn wsp-btn">Enviar Copia por WhatsApp</button>
             </div>
 
-            <!-- NUEVO: PANEL DE DICTAMEN Y RECOMENDACIONES JURÍDICAS -->
             <div id="panel-juridico" style="margin-top: 25px; padding: 20px; border-radius: 8px; background-color: var(--bg-card); border: 2px solid var(--primary); text-align: left;">
                 <h3 style="margin-top: 0; color: var(--primary); font-size: 1.1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 8px; display: flex; align-items: center; gap: 8px;">
                     ⚖️ Dictamen y Recomendaciones Jurídicas (D.L. 728)
@@ -123,10 +122,8 @@
                 <div style="font-size: 0.85rem; line-height: 1.6; color: var(--text-main);">
                     <p><strong>Plazo de Pago Obligatorio:</strong> Conforme a la legislación vigente, el empleador cuenta con un plazo perentorio de <strong>48 horas</strong> desde producido el cese para depositar el íntegro de la liquidación y entregar la constancia de baja junto a la carta de retiro de CTS. El incumplimiento genera intereses legales automáticos y constituye una infracción grave sancionable por SUNAFIL.</p>
                     
-                    <!-- Contenedor dinámico donde JS inyectará las alertas -->
                     <div id="alertas-dinamicas-legales" style="margin-top: 15px; padding: 12px; border-left: 4px solid var(--primary); background-color: rgba(0,0,0,0.02);">
-                        <!-- Las recomendaciones específicas aparecerán aquí mediante JavaScript -->
-                    </div>
+                        </div>
                 </div>
             </div>
         </div>
@@ -136,6 +133,6 @@
         </div>
     </div>
 
-    <script src="script.js"></script>
+    <script src="script.js" defer></script>
 </body>
 </html>
