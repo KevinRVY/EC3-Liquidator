@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Liquidator - Calculadora D.L. 728</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <div class="top-bar">
+            <span class="badge-estado">Régimen Privado Peruano</span>
+            <button id="btn-theme" class="theme-toggle-btn" aria-label="Cambiar tema">🌙 Modo Oscuro</button>
+        </div>
+
+        <div class="header-app">
+            <h1>Liquidator ⚖️</h1>
+            <p class="subtitle">Cálculo de Liquidación de Beneficios Sociales - D.L. 728</p>
+        </div>
+
+        <form id="form-liquidacion" onsubmit="event.preventDefault();">
+            <fieldset>
+                <legend>Datos de Control Temporal y Contractual</legend>
+                <div class="row">
+                    <div class="input-group">
+                        <label for="fecha-inicio">Fecha de Ingreso:</label>
+                        <input type="date" id="fecha-inicio" required>
+                    </div>
+                    <div class="input-group">
+                        <label for="fecha-cese">Fecha de Cese:</label>
+                        <input type="date" id="fecha-cese" required>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="input-group">
+                        <label for="tipo-contrato">Tipo de Contrato:</label>
+                        <select id="tipo-contrato">
+                            <option value="indeterminado">Indeterminado</option>
+                            <option value="modal">Sujeto a modalidad (plazo fijo)</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label for="motivo-cese">Motivo del Cese:</label>
+                        <select id="motivo-cese">
+                            <option value="renuncia">Renuncia Voluntaria / Mutuo Disenso</option>
+                            <option value="despido">Despido Arbitrario</option>
+                            <option value="termino">Término de Contrato Ordinario</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="input-group hidden" id="group-fecha-vencimiento">
+                    <label for="fecha-termino-contrato">Fecha de vencimiento del contrato:</label>
+                    <input type="date" id="fecha-termino-contrato">
+                </div>
+            </fieldset>
+
+            <fieldset>
+                <legend>Variables Remunerativas e Incidencias</legend>
+                <div class="row">
+                    <div class="input-group">
+                        <label for="sueldo-basico">Última Remuneración Mensual (S/):</label>
+                        <input type="number" id="sueldo-basico" placeholder="Mínimo S/ 1130.00" min="0" step="0.01" required>
+                    </div>
+                    <div class="input-group">
+                        <label for="tiene-hijos">¿Cuenta con Asignación Familiar?:</label>
+                        <select id="tiene-hijos">
+                            <option value="no">No tengo hijos a cargo</option>
+                            <option value="si">Sí tengo hijos menores / universitarios</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label for="dias-inasistencia">Días no computables (inasistencias injustificadas o licencias sin goce de haber):</label>
+                    <input type="number" id="dias-inasistencia" placeholder="0" min="0" value="0">
+                </div>
+            </fieldset>
+
+            <button type="button" id="btn-calcular" class="primary-btn">Calcular Liquidación de Beneficios</button>
+        </form>
+
+        <div id="resultados" class="results-box" style="display: none;">
+            <h2>Monto de Liquidación Estimado</h2>
+            
+            <div class="result-card">
+                <h3>Asignación Familiar Incorporada (Fija en Base Computable)</h3>
+                <p id="res-asig">S/ 0.00</p>
+            </div>
+            <div class="result-card">
+                <h3>Compensación por Tiempo de Servicios (CTS) Trunca</h3>
+                <p id="res-cts">S/ 0.00</p>
+            </div>
+            <div class="result-card">
+                <h3>Gratificación Trunca Semestral</h3>
+                <p id="res-grati">S/ 0.00</p>
+            </div>
+            <div class="result-card">
+                <h3>Vacaciones Truncas Acumuladas</h3>
+                <p id="res-vacaciones">S/ 0.00</p>
+            </div>
+            <div class="result-card" id="card-indemnizacion" style="display: none;">
+                <h3 style="font-weight: bold;">Indemnización por Despido Arbitrario (Art. 76)</h3>
+                <p id="res-indemnizacion">S/ 0.00</p>
+            </div>
+
+            <div class="result-card total-card">
+                <h3>TOTAL NETO A PAGAR EN LIQUIDACIÓN:</h3>
+                <p id="res-total">S/ 0.00</p>
+                <span class="legal-note">Obligación de pago del empleador: Máximo 48 horas posteriores al cese de labores.</span>
+            </div>
+
+            <div class="actions-area">
+                <button id="btn-pdf" class="action-btn pdf-btn">Descargar Expediente PDF</button>
+                <button id="btn-wsp" class="action-btn wsp-btn">Enviar Copia por WhatsApp</button>
+            </div>
+        </div>
+
+        <div class="legal-disclaimer">
+            <p><strong>Nota Legal:</strong> Esta plataforma realiza simulaciones matemáticas basadas estrictamente en la normativa del Decreto Legislativo N° 728 y normas complementarias vigentes. Los resultados tienen carácter netamente informativo y referencial.</p>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

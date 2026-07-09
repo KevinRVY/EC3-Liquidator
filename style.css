@@ -1,0 +1,301 @@
+/* ==========================================================================
+   VARIABLES DE COLOR (MODO CLARO POR DEFECTO)
+   ========================================================================== */
+:root {
+    --bg-app: #f8fafc;
+    --bg-card: #ffffff;
+    --bg-results: #f1f5f9;
+    --bg-total: #e2e8f0;
+    
+    --text-main: #0f172a;
+    --text-sub: #64748b;
+    --text-labels: #334155;
+    
+    --primary: #1e3a8a;
+    --primary-light: #3b82f6;
+    --success: #047857;
+    --danger: #b91c1c;
+    --danger-text: #991b1b;
+    --border-color: #cbd5e1;
+}
+
+/* ==========================================================================
+   VARIABLES DE COLOR (MODO OSCURO ACTIVO)
+   ========================================================================== */
+body.dark-theme {
+    --bg-app: #0f172a;
+    --bg-card: #1e293b;
+    --bg-results: #1e293b;
+    --bg-total: #334155;
+    
+    --text-main: #f8fafc;
+    --text-sub: #94a3b8;
+    --text-labels: #cbd5e1;
+    
+    --primary: #3b82f6;
+    --primary-light: #60a5fa;
+    --success: #10b981;
+    --danger: #ef4444;
+    --danger-text: #fca5a5;
+    --border-color: #475569;
+}
+
+/* ==========================================================================
+   ESTILOS GENERALES Y ESTRUCTURA
+   ========================================================================== */
+* {
+    box-sizing: border-box;
+    transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: var(--bg-app);
+    color: var(--text-main);
+    margin: 0;
+    padding: 20px;
+    display: flex;
+    justify-content: center;
+}
+
+.container {
+    width: 100%;
+    max-width: 750px;
+    background: var(--bg-card);
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+}
+
+/* BARRA SUPERIOR (BOTÓN MODO OSCURO) */
+.top-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.badge-estado {
+    background-color: var(--bg-total);
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: bold;
+    color: var(--text-sub);
+    text-transform: uppercase;
+}
+
+.theme-toggle-btn {
+    background-color: var(--bg-total);
+    color: var(--text-main);
+    border: 1px solid var(--border-color);
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.theme-toggle-btn:hover {
+    border-color: var(--primary-light);
+}
+
+/* ENCABEZADO */
+.header-app {
+    text-align: center;
+    margin-bottom: 25px;
+    border-bottom: 2px solid var(--border-color);
+    padding-bottom: 15px;
+}
+
+h1 {
+    color: var(--primary);
+    margin: 0 0 5px 0;
+    font-size: 2.2rem;
+}
+
+.subtitle {
+    color: var(--text-sub);
+    margin: 0;
+    font-size: 0.95rem;
+}
+
+/* ==========================================================================
+   FORMULARIO E INPUTS
+   ========================================================================== */
+fieldset {
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 15px 20px;
+    margin-bottom: 20px;
+}
+
+legend {
+    font-weight: bold;
+    color: var(--primary);
+    padding: 0 10px;
+}
+
+.row {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 15px;
+}
+
+.input-group {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+label {
+    font-size: 0.88rem;
+    font-weight: 600;
+    margin-bottom: 6px;
+    color: var(--text-labels);
+}
+
+input, select {
+    padding: 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    font-size: 0.92rem;
+    outline: none;
+    background-color: var(--bg-card);
+    color: var(--text-main);
+    width: 100%;
+}
+
+input:focus, select:focus {
+    border-color: var(--primary-light);
+}
+
+.hidden {
+    display: none !important;
+}
+
+.primary-btn {
+    width: 100%;
+    background-color: var(--primary);
+    color: #ffffff;
+    padding: 12px;
+    border: none;
+    border-radius: 6px;
+    font-size: 1rem;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.primary-btn:hover {
+    filter: brightness(1.1);
+}
+
+/* ==========================================================================
+   RESULTADOS
+   ========================================================================== */
+.results-box {
+    margin-top: 30px;
+    padding: 20px;
+    background-color: var(--bg-results);
+    border-radius: 8px;
+    border-left: 5px solid var(--primary);
+}
+
+.results-box h2 {
+    margin-top: 0;
+    color: var(--primary);
+    font-size: 1.35rem;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 8px;
+}
+
+.result-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px dashed var(--border-color);
+}
+
+.result-card h3 {
+    margin: 0;
+    font-size: 0.95rem;
+    font-weight: normal;
+    color: var(--text-labels);
+}
+
+.result-card p {
+    margin: 0;
+    font-weight: bold;
+    font-size: 1.05rem;
+}
+
+/* CARD DE INDEMNIZACIÓN (ALERTA ROJA) */
+#card-indemnizacion h3 {
+    color: var(--danger);
+}
+#card-indemnizacion p {
+    color: var(--danger-text);
+}
+
+/* TOTAL NETO */
+.total-card {
+    background-color: var(--bg-total);
+    margin-top: 15px;
+    padding: 15px;
+    border-radius: 6px;
+    border-bottom: none;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.total-card h3 {
+    font-weight: bold;
+    color: var(--text-main);
+    font-size: 1.05rem;
+    margin-bottom: 5px;
+}
+
+.total-card p {
+    font-size: 1.7rem;
+    color: var(--success);
+}
+
+.legal-note {
+    font-size: 0.78rem;
+    color: var(--text-sub);
+    margin-top: 5px;
+    font-style: italic;
+}
+
+/* BOTONES DE SALIDA */
+.actions-area {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.action-btn {
+    flex: 1;
+    padding: 10px;
+    border: none;
+    border-radius: 6px;
+    font-weight: bold;
+    cursor: pointer;
+    font-size: 0.9rem;
+    color: #ffffff;
+    text-align: center;
+}
+
+.pdf-btn { background-color: #475569; }
+.pdf-btn:hover { background-color: #334155; }
+.wsp-btn { background-color: #16a34a; }
+.wsp-btn:hover { background-color: #15803d; }
+
+.legal-disclaimer {
+    margin-top: 25px;
+    font-size: 0.78rem;
+    color: var(--text-sub);
+    text-align: justify;
+    line-height: 1.3;
+}
