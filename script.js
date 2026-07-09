@@ -1,298 +1,137 @@
 /* ==========================================================================
-   CONTRATACIÓN Y CÁLCULO DE LIQUIDACIÓN LABORAL (D.L. 728 - PERÚ)
+   EXPORTACIÓN DE EXPEDIENTE A PDF (jsPDF)
    ========================================================================== */
-
-// Asignación Familiar Legal Vigente (Sueldo Mínimo S/ 1130 -> 10% = S/ 113)
-const RMV = 1130.00;
-const ASIGNACION_FAMILIAR_VALOR = 113.00;
-
-document.addEventListener("DOMContentLoaded", () => {
-    inicializarTema();
-    inicializarEventosFormulario();
-});
-
-/* ==========================================================================
-   GESTIÓN DEL MODO OSCURO (INTERACTIVO)
-   ========================================================================== */
-function inicializarTema() {
-    const btnTheme = document.getElementById("btn-theme");
-    if (!btnTheme) return;
-
-    const temaGuardado = localStorage.getItem("theme");
-
-    if (temaGuardado === "dark") {
-        document.body.classList.add("dark-theme");
-        btnTheme.textContent = "☀️ Modo Claro";
-    } else {
-        document.body.classList.remove("dark-theme");
-        btnTheme.textContent = "🌙 Modo Oscuro";
+document.getElementById("btn-pdf").addEventListener("click", () => {
+    // 1. Verificar si hay resultados visibles antes de exportar
+    if (document.getElementById("resultados").style.display === "none") {
+        alert("Primero debes calcular la liquidación para poder exportar el PDF.");
+        return;
     }
 
-    btnTheme.addEventListener("click", () => {
-        document.body.classList.toggle("dark-theme");
-        
-        if (document.body.classList.contains("dark-theme")) {
-            localStorage.setItem("theme", "dark");
-            btnTheme.textContent = "☀️ Modo Claro";
-        } else {
-            localStorage.setItem("theme", "light");
-            btnTheme.textContent = "🌙 Modo Oscuro";
-        }
-    });
-}
-
-/* ==========================================================================
-   LÓGICA DEL FORMULARIO LABORAL
-   ========================================================================== */
-function inicializarEventosFormulario() {
-    const tipoContratoSelect = document.getElementById("tipo-contrato");
-    const grupoFechaVencimiento = document.getElementById("group-fecha-vencimiento");
-    const btnCalcular = document.getElementById("btn-calcular");
-
-    tipoContratoSelect.addEventListener("change", () => {
-        if (tipoContratoSelect.value === "modal") {
-            grupoFechaVencimiento.classList.remove("hidden");
-            document.getElementById("fecha-termino-contrato").setAttribute("required", "required");
-        } else {
-            grupoFechaVencimiento.classList.add("hidden");
-            document.getElementById("fecha-termino-contrato").removeAttribute("required");
-            document.getElementById("fecha-termino-contrato").value = "";
-        }
+    // 2. Inicializar jsPDF (usando el espacio de nombres correcto para v2.5.1)
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({
+        orientation: "portrait",
+        unit: "mm",
+        format: "a4"
     });
 
-    btnCalcular.addEventListener("click", procesarCalculoLiquidacion);
-}
-
-function procesarCalculoLiquidacion() {
-    // 1. Captura de Datos
-    const fInicioRaw = document.getElementById("fecha-inicio").value;
-    const fCeseRaw = document.getElementById("fecha-cese").value;
-    const sueldoBasico = parseFloat(document.getElementById("sueldo-basico").value);
-    const tieneHijos = document.getElementById("tiene-hijos").value === "si";
-    const diasInasistencia = parseInt(document.getElementById("dias-inasistencia").value) || 0;
+    // 3. Capturar los valores actuales de la pantalla
+    const fechaInicio = document.getElementById("fecha-inicio").value;
+    const fechaCese = document.getElementById("fecha-cese").value;
+    const tipoContrato = document.getElementById("tipo-contrato").options[document.getElementById("tipo-contrato").selectedIndex].text;
+    const motivoCese = document.getElementById("motivo-cese").options[document.getElementById("motivo-cese").selectedIndex].text;
+    const sueldoBasico = document.getElementById("sueldo-basico").value;
     
-    const tipoContrato = document.getElementById("tipo-contrato").value;
-    const motivoCese = document.getElementById("motivo-cese").value;
-    const fVencimientoRaw = document.getElementById("fecha-termino-contrato").value;
+    const resAsig = document.getElementById("res-asig").textContent;
+    const resCts = document.getElementById("res-cts").textContent;
+    const resGrati = document.getElementById("res-grati").textContent;
+    const resVacaciones = document.getElementById("res-vacaciones").textContent;
+    const resTotal = document.getElementById("res-total").textContent;
 
-    // --- CAPA DE VALIDACIONES CORREGIDA (MÁS HUMANA) ---
-    
-    if (!fInicioRaw || !fCeseRaw || isNaN(sueldoBasico)) {
-        alert("Error: Por favor, completa todos los campos obligatorios.");
-        return;
-    }
-
-    if (sueldoBasico < RMV) {
-        alert(`Error: El sueldo mensual no puede ser menor a la RMV actual (S/ ${RMV.toFixed(2)}).`);
-        return;
-    }
-
-    const fechaInicio = new Date(fInicioRaw + "T00:00:00");
-    const fechaCese = new Date(fCeseRaw + "T00:00:00");
-
-    if (fechaCese < fechaInicio) {
-        alert("Error: La fecha de cese no puede ser anterior a la de ingreso.");
-        return;
-    }
-
-    if (tipoContrato === "modal") {
-        if (!fVencimientoRaw) {
-            alert("Error: Debes ingresar la fecha de vencimiento del contrato.");
-            return;
-        }
-
-        const fechaVencimiento = new Date(fVencimientoRaw + "T00:00:00");
-
-        if (fechaVencimiento < fechaInicio) {
-            alert("Error: La fecha de vencimiento no puede ser anterior a la de ingreso.");
-            return;
-        }
-
-        if (fechaCese > fechaVencimiento) {
-            alert("Error: La fecha de cese no puede ser posterior al vencimiento del contrato.");
-            return;
-        }
-    }
-
-    // --- FIN DE LA CAPA DE VALIDACIÓN ---
-
-    // 2. Determinación de Tiempo de Servicio Computable
-    let tiempo = calcularTiempoExacto(fechaInicio, fechaCese);
-    
-    let totalDiasRecord = (tiempo.anos * 360) + (tiempo.meses * 30) + tiempo.dias;
-    let totalDiasComputables = Math.max(0, totalDiasRecord - diasInasistencia);
-
-    if (totalDiasComputables <= 0) {
-        alert("Error: Los días de inasistencia superan al tiempo total trabajado.");
-        return;
-    }
-
-    let anosComp = Math.floor(totalDiasComputables / 360);
-    let restoDias = totalDiasComputables % 360;
-    let mesesComp = Math.floor(restoDias / 30);
-    let diasComp = restoDias % 30;
-
-    // 3. Establecer Bases Computables
-    const asignacionFamiliar = tieneHijos ? ASIGNACION_FAMILIAR_VALOR : 0.00;
-    const remuneracionFijaMensual = sueldoBasico + asignacionFamiliar;
-
-    const sextoGratificacion = remuneracionFijaMensual / 6;
-    const baseComputableCTS = remuneracionFijaMensual + sextoGratificacion;
-    
-    const baseComputableGrati = remuneracionFijaMensual;
-    const baseComputableVacac = remuneracionFijaMensual;
-
-    // 4. Algoritmos Matemáticos de Beneficios Truncos
-    let totalCTS = 0;
-    if (totalDiasComputables >= 30) {
-        totalCTS = (baseComputableCTS / 12 * anosComp) + 
-                   (baseComputableCTS / 12 * mesesComp) + 
-                   (baseComputableCTS / 12 / 30 * diasComp);
-    }
-
-    let totalGrati = (baseComputableGrati / 6) * mesesComp;
-    let bonificacionExtra = totalGrati * 0.09;
-    let totalGratiConBono = totalGrati + bonificacionExtra;
-
-    let totalVacaciones = (baseComputableVacac / 12 * anosComp) + 
-                          (baseComputableVacac / 12 * mesesComp) + 
-                          (baseComputableVacac / 12 / 30 * diasComp);
-
-    // 5. Indemnización por Despido Arbitrario
-    let totalIndemnizacion = 0;
+    // Verificar si la indemnización está activa
     const cardIndemnizacion = document.getElementById("card-indemnizacion");
+    const resIndemnizacion = cardIndemnizacion.style.display !== "none" ? document.getElementById("res-indemnizacion").textContent : "S/ 0.00";
 
-    if (motivoCese === "despido") {
-        if (tipoContrato === "indeterminado") {
-            let sueldosIndemnizables = 1.5 * (anosComp + (mesesComp / 12) + (diasComp / 360));
-            if (sueldosIndemnizables > 12) sueldosIndemnizables = 12;
-            totalIndemnizacion = baseComputableVacac * sueldosIndemnizables;
-        } else if (tipoContrato === "modal") {
-            const fechaVencimiento = new Date(fVencimientoRaw + "T00:00:00");
-            if (fechaVencimiento > fechaCese) {
-                let tiempoFaltante = calcularTiempoExacto(fechaCese, fechaVencimiento);
-                let mesesFaltantes = (tiempoFaltante.anos * 12) + tiempoFaltante.meses + (tiempoFaltante.dias / 30);
-                totalIndemnizacion = (baseComputableVacac * 1.5) * mesesFaltantes;
-                
-                const topeMaximoModal = baseComputableVacac * 12;
-                if (totalIndemnizacion > topeMaximoModal) totalIndemnizacion = topeMaximoModal;
-            }
-        }
-    }
+    // 4. Diseño y Estructura del PDF
+    let y = 20; // Control de posición vertical
 
-    // 6. Consolidación y Despliegue de Resultados
-    const totalNetoLiquidacion = totalCTS + totalGratiConBono + totalVacaciones + totalIndemnizacion;
-
-    document.getElementById("res-asig").textContent = `S/ ${asignacionFamiliar.toFixed(2)}`;
-    document.getElementById("res-cts").textContent = `S/ ${totalCTS.toFixed(2)}`;
-    document.getElementById("res-grati").textContent = `S/ ${totalGratiConBono.toFixed(2)} (Incluye 9% Bono)`;
-    document.getElementById("res-vacaciones").textContent = `S/ ${totalVacaciones.toFixed(2)}`;
+    // Encabezado / Título
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(22);
+    doc.text("Liquidator ⚖️", 20, y);
     
-    if (totalIndemnizacion > 0) {
-        document.getElementById("res-indemnizacion").textContent = `S/ ${totalIndemnizacion.toFixed(2)}`;
-        cardIndemnizacion.style.display = "flex";
-    } else {
-        cardIndemnizacion.style.display = "none";
-    }
+    y += 8;
+    doc.setFontSize(12);
+    doc.setFont("helvetica", "normal");
+    doc.text("Reporte de Liquidación de Beneficios Sociales - D.L. 728", 20, y);
+    
+    // Línea divisoria
+    y += 5;
+    doc.setLineWidth(0.5);
+    doc.line(20, y, 190, y);
 
-    document.getElementById("res-total").textContent = `S/ ${totalNetoLiquidacion.toFixed(2)}`;
-    document.getElementById("resultados").style.display = "block";
+    // Sección 1: Datos Contractuales
+    y += 12;
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(14);
+    doc.text("1. Datos de Control Temporal y Contractual", 20, y);
 
-    // INYECCIÓN AUTOMÁTICA DEL DICTAMEN JURÍDICO
-    generarDictamenJuridico();
-}
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+    y += 8;
+    doc.text(`Fecha de Ingreso: ${fechaInicio}`, 25, y);
+    y += 6;
+    doc.text(`Fecha de Cese: ${fechaCese}`, 25, y);
+    y += 6;
+    doc.text(`Tipo de Contrato: ${tipoContrato}`, 25, y);
+    y += 6;
+    doc.text(`Motivo de Cese: ${motivoCese}`, 25, y);
+    y += 6;
+    doc.text(`Última Remuneración Mensual: S/ ${parseFloat(sueldoBasico).toFixed(2)}`, 25, y);
 
-function calcularTiempoExacto(fInicio, fCese) {
-    let anos = fCese.getFullYear() - fInicio.getFullYear();
-    let meses = fCese.getMonth() - fInicio.getMonth();
-    let dias = fCese.getDate() - fInicio.getDate();
+    // Sección 2: Desglose de Beneficios Truncos
+    y += 15;
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(14);
+    doc.text("2. Desglose de Beneficios Sociales Estimados", 20, y);
 
-    if (dias < 0) {
-        meses--;
-        dias += 30;
-    }
-    if (meses < 0) {
-        anos--;
-        meses += 12;
-    }
-    return { anos, meses, dias };
-}
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+    y += 8;
+    doc.text(`Asignación Familiar Incorporada:`, 25, y);
+    doc.text(resAsig, 140, y, { align: "right" });
+    
+    y += 6;
+    doc.text(`Compensación por Tiempo de Servicios (CTS) Trunca:`, 25, y);
+    doc.text(resCts, 140, y, { align: "right" });
+    
+    y += 6;
+    doc.text(`Gratificación Trunca Semestral:`, 25, y);
+    doc.text(resGrati, 140, y, { align: "right" });
+    
+    y += 6;
+    doc.text(`Vacaciones Truncas Acumuladas:`, 25, y);
+    doc.text(resVacaciones, 140, y, { align: "right" });
 
-/* ==========================================================================
-   NUEVO: PANEL DE DICTAMEN Y RECOMENDACIONES JURÍDICAS (D.L. 728)
-   ========================================================================== */
-function generarDictamenJuridico() {
-    const motivoCese = document.getElementById("motivo-cese").value;
-    const tieneHijos = document.getElementById("tiene-hijos").value === "si";
-    const tipoContrato = document.getElementById("tipo-contrato").value;
-    const diasInasistencia = parseInt(document.getElementById("dias-inasistencia").value) || 0;
-    const contenedorAlertas = document.getElementById("alertas-dinamicas-legales");
+    y += 6;
+    doc.text(`Indemnización por Despido Arbitrario:`, 25, y);
+    doc.text(resIndemnizacion, 140, y, { align: "right" });
 
-    if (!contenedorAlertas) return;
+    // Línea de Total
+    y += 5;
+    doc.setLineWidth(0.25);
+    doc.line(25, y, 140, y);
 
-    let dictamenHTML = "";
+    // Total Neto
+    y += 8;
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(12);
+    doc.text(`TOTAL NETO ESTIMADO A PAGAR:`, 25, y);
+    doc.text(resTotal, 140, y, { align: "right" });
 
-    // 1. Análisis del Motivo del Cese e Indemnización (D.S. N° 003-97-TR)
-    if (motivoCese === "despido") {
-        dictamenHTML += `
-            <div style="margin-bottom: 15px;">
-                <p style="margin: 0 0 5px 0; color: #ef4444; font-weight: bold;">🔴 ALERTA CRÍTICA: Despido Arbitrario Detectado</p>
-                <p style="margin: 0; text-align: justify;">
-                    Al haberse configurado un cese por despido unilateral, se ha activado la protección resarcitoria del <strong>Artículo 38 del D.S. 003-97-TR</strong>. El sistema ha incorporado la indemnización equivalente a 1.5 remuneraciones por año completo o dozavos según corresponda. 
-                    <br><strong>Acción Recomendada:</strong> El trabajador cuenta con un plazo de caducidad perentorio de <strong>30 días naturales</strong> para interponer una demanda ordinaria por despido arbitrario o solicitar la tutela inspectiva ante la <strong>SUNAFIL</strong>.
-                </p>
-            </div>
-        `;
-    } else if (motivoCese === "renuncia") {
-        dictamenHTML += `
-            <div style="margin-bottom: 15px;">
-                <p style="margin: 0 0 5px 0; color: #3b82f6; font-weight: bold;">🔵 Cese por Voluntad del Trabajador (Renuncia / Mutuo Disenso)</p>
-                <p style="margin: 0; text-align: justify;">
-                    Al tratarse de una desvinculación voluntaria, se extingue el derecho a percibir una indemnización por despido. Sin embargo, se mantiene incólume el derecho al cobro de los beneficios truncos acumulados (CTS, Gratificaciones y Vacaciones) prorrateados por los meses y días efectivamente laborados, siempre que se registre al menos un mes de servicios en la empresa.
-                </p>
-            </div>
-        `;
-    } else if (motivoCese === "termino" && tipoContrato === "modal") {
-        dictamenHTML += `
-            <div style="margin-bottom: 15px;">
-                <p style="margin: 0 0 5px 0; color: #f59e0b; font-weight: bold;">🟡 Extinción por Vencimiento de Contrato Sujeto a Modalidad</p>
-                <p style="margin: 0; text-align: justify;">
-                    El cese se produce de forma ordinaria por la llegada del término pactado. Recuerde verificar que la causa objetiva de contratación estipulada en su contrato modal físico se encuentre debidamente justificada en la realidad; de lo contrario, podría configurarse una desnaturalización contractual, transformando el vínculo en indeterminado.
-                </p>
-            </div>
-        `;
-    }
+    // Sección 3: Dictamen Jurídico y Plazos
+    y += 18;
+    doc.setFontSize(12);
+    doc.text("3. Criterios de Cumplimiento Legal", 20, y);
+    
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    y += 6;
+    const notaPago = doc.splitTextToSize("Plazo de Pago Obligatorio: Conforme a la legislación del régimen privado peruano, el empleador cuenta con un plazo máximo de 48 horas posteriores al cese de labores para depositar el íntegro de la liquidación, entregar la constancia de baja (T-Registro) y la carta de retiro de CTS. El incumplimiento genera intereses legales automáticos y multas por parte de la SUNAFIL.", 165);
+    doc.text(notaPago, 20, y);
 
-    // 2. Incidencia de la Carga Familiar (Ley N° 25129)
-    if (tieneHijos) {
-        dictamenHTML += `
-            <div style="margin-bottom: 15px; border-top: 1px dashed var(--border-color); padding-top: 10px;">
-                <p style="margin: 0 0 5px 0; color: #10b981; font-weight: bold;">👶 Protección y Concepto de Asignación Familiar</p>
-                <p style="margin: 0; text-align: justify;">
-                    Conforme a la <strong>Ley N° 25129</strong>, el subsidio por carga familiar equivale de forma fija al 10% de la Remuneración Mínima Vital vigente (S/ 113.00). Al tener naturaleza estrictamente <strong>remunerativa</strong>, el sistema ha indexado este monto de forma obligatoria dentro de la base imponible computable, incrementando legalmente el valor final de su CTS, Gratificaciones y Vacaciones truncas.
-                </p>
-            </div>
-        `;
-    }
+    y += 20;
+    const notaPrescripcion = doc.splitTextToSize("Prescripción Extintiva: De acuerdo con la Ley N° 27321, las acciones para reclamar el cobro de derechos remunerativos y beneficios sociales prescriben de forma irrevocable a los 4 años, contabilizados desde el día siguiente de la extinción definitiva del vínculo laboral.", 165);
+    doc.text(notaPrescripcion, 20, y);
 
-    // 3. Fiscalización de Días No Computables (Ausencias / Licencias sin goce)
-    if (diasInasistencia > 0) {
-        dictamenHTML += `
-            <div style="margin-bottom: 15px; border-top: 1px dashed var(--border-color); padding-top: 10px;">
-                <p style="margin: 0 0 5px 0; color: #6b7280; font-weight: bold;">⏳ Deducción por Días No Computables</p>
-                <p style="margin: 0; text-align: justify;">
-                    Se han registrado ${diasInasistencia} días correspondientes a inasistencias injustificadas o licencias sin goce de haber. Conforme a las normas de cálculo de la CTS y Vacaciones, estos periodos de suspensión perfecta del contrato de trabajo se deducen a razón de treintavos del periodo de cálculo, reduciendo proporcionalmente el beneficio final.
-                </p>
-            </div>
-        `;
-    }
+    // Pie de página de Descargo de responsabilidad
+    y += 20;
+    doc.setFont("helvetica", "italic");
+    doc.setFontSize(8);
+    const disclaimer = doc.splitTextToSize("Nota de Exención: Este documento es una simulación matemática basada en los datos ingresados por el usuario y los lineamientos del D.L. 728. Tiene carácter estrictamente referencial e informativo.", 165);
+    doc.text(disclaimer, 20, y);
 
-    // 4. Prescripción Legal de Derechos Laborales (Norma Constitucional)
-    dictamenHTML += `
-        <div style="margin-top: 15px; font-style: italic; color: var(--text-sub); border-top: 1px solid var(--border-color); padding-top: 10px; font-size: 0.8rem;">
-            ⚖️ <strong>Plazo de Prescripción Extintiva:</strong> De acuerdo con la Ley N° 27321, las acciones para reclamar derechos de remuneraciones y beneficios sociales nacidos de la relación laboral prescriben de forma irrevocable a los <strong>4 años</strong>, contados a partir del día siguiente de la fecha de cese definitivo.
-        </div>
-    `;
-
-    contenedorAlertas.innerHTML = dictamenHTML;
-}
+    // 5. Descargar el archivo con nombre dinámico
+    doc.save(`Expediente_Liquidacion_${fechaCese || "D.L.728"}.pdf`);
+});
