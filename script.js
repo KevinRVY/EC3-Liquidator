@@ -197,6 +197,9 @@ function procesarCalculoLiquidacion() {
 
     document.getElementById("res-total").textContent = `S/ ${totalNetoLiquidacion.toFixed(2)}`;
     document.getElementById("resultados").style.display = "block";
+
+    // INYECCIÓN AUTOMÁTICA DEL DICTAMEN JURÍDICO
+    generarDictamenJuridico();
 }
 
 function calcularTiempoExacto(fInicio, fCese) {
@@ -213,4 +216,83 @@ function calcularTiempoExacto(fInicio, fCese) {
         meses += 12;
     }
     return { anos, meses, dias };
+}
+
+/* ==========================================================================
+   NUEVO: PANEL DE DICTAMEN Y RECOMENDACIONES JURÍDICAS (D.L. 728)
+   ========================================================================== */
+function generarDictamenJuridico() {
+    const motivoCese = document.getElementById("motivo-cese").value;
+    const tieneHijos = document.getElementById("tiene-hijos").value === "si";
+    const tipoContrato = document.getElementById("tipo-contrato").value;
+    const diasInasistencia = parseInt(document.getElementById("dias-inasistencia").value) || 0;
+    const contenedorAlertas = document.getElementById("alertas-dinamicas-legales");
+
+    if (!contenedorAlertas) return;
+
+    let dictamenHTML = "";
+
+    // 1. Análisis del Motivo del Cese e Indemnización (D.S. N° 003-97-TR)
+    if (motivoCese === "despido") {
+        dictamenHTML += `
+            <div style="margin-bottom: 15px;">
+                <p style="margin: 0 0 5px 0; color: #ef4444; font-weight: bold;">🔴 ALERTA CRÍTICA: Despido Arbitrario Detectado</p>
+                <p style="margin: 0; text-align: justify;">
+                    Al haberse configurado un cese por despido unilateral, se ha activado la protección resarcitoria del <strong>Artículo 38 del D.S. 003-97-TR</strong>. El sistema ha incorporado la indemnización equivalente a 1.5 remuneraciones por año completo o dozavos según corresponda. 
+                    <br><strong>Acción Recomendada:</strong> El trabajador cuenta con un plazo de caducidad perentorio de <strong>30 días naturales</strong> para interponer una demanda ordinaria por despido arbitrario o solicitar la tutela inspectiva ante la <strong>SUNAFIL</strong>.
+                </p>
+            </div>
+        `;
+    } else if (motivoCese === "renuncia") {
+        dictamenHTML += `
+            <div style="margin-bottom: 15px;">
+                <p style="margin: 0 0 5px 0; color: #3b82f6; font-weight: bold;">🔵 Cese por Voluntad del Trabajador (Renuncia / Mutuo Disenso)</p>
+                <p style="margin: 0; text-align: justify;">
+                    Al tratarse de una desvinculación voluntaria, se extingue el derecho a percibir una indemnización por despido. Sin embargo, se mantiene incólume el derecho al cobro de los beneficios truncos acumulados (CTS, Gratificaciones y Vacaciones) prorrateados por los meses y días efectivamente laborados, siempre que se registre al menos un mes de servicios en la empresa.
+                </p>
+            </div>
+        `;
+    } else if (motivoCese === "termino" && tipoContrato === "modal") {
+        dictamenHTML += `
+            <div style="margin-bottom: 15px;">
+                <p style="margin: 0 0 5px 0; color: #f59e0b; font-weight: bold;">🟡 Extinción por Vencimiento de Contrato Sujeto a Modalidad</p>
+                <p style="margin: 0; text-align: justify;">
+                    El cese se produce de forma ordinaria por la llegada del término pactado. Recuerde verificar que la causa objetiva de contratación estipulada en su contrato modal físico se encuentre debidamente justificada en la realidad; de lo contrario, podría configurarse una desnaturalización contractual, transformando el vínculo en indeterminado.
+                </p>
+            </div>
+        `;
+    }
+
+    // 2. Incidencia de la Carga Familiar (Ley N° 25129)
+    if (tieneHijos) {
+        dictamenHTML += `
+            <div style="margin-bottom: 15px; border-top: 1px dashed var(--border-color); padding-top: 10px;">
+                <p style="margin: 0 0 5px 0; color: #10b981; font-weight: bold;">👶 Protección y Concepto de Asignación Familiar</p>
+                <p style="margin: 0; text-align: justify;">
+                    Conforme a la <strong>Ley N° 25129</strong>, el subsidio por carga familiar equivale de forma fija al 10% de la Remuneración Mínima Vital vigente (S/ 113.00). Al tener naturaleza estrictamente <strong>remunerativa</strong>, el sistema ha indexado este monto de forma obligatoria dentro de la base imponible computable, incrementando legalmente el valor final de su CTS, Gratificaciones y Vacaciones truncas.
+                </p>
+            </div>
+        `;
+    }
+
+    // 3. Fiscalización de Días No Computables (Ausencias / Licencias sin goce)
+    if (diasInasistencia > 0) {
+        dictamenHTML += `
+            <div style="margin-bottom: 15px; border-top: 1px dashed var(--border-color); padding-top: 10px;">
+                <p style="margin: 0 0 5px 0; color: #6b7280; font-weight: bold;">⏳ Deducción por Días No Computables</p>
+                <p style="margin: 0; text-align: justify;">
+                    Se han registrado ${diasInasistencia} días correspondientes a inasistencias injustificadas o licencias sin goce de haber. Conforme a las normas de cálculo de la CTS y Vacaciones, estos periodos de suspensión perfecta del contrato de trabajo se deducen a razón de treintavos del periodo de cálculo, reduciendo proporcionalmente el beneficio final.
+                </p>
+            </div>
+        `;
+    }
+
+    // 4. Prescripción Legal de Derechos Laborales (Norma Constitucional)
+    dictamenHTML += `
+        <div style="margin-top: 15px; font-style: italic; color: var(--text-sub); border-top: 1px solid var(--border-color); padding-top: 10px; font-size: 0.8rem;">
+            ⚖️ <strong>Plazo de Prescripción Extintiva:</strong> De acuerdo con la Ley N° 27321, las acciones para reclamar derechos de remuneraciones y beneficios sociales nacidos de la relación laboral prescriben de forma irrevocable a los <strong>4 años</strong>, contados a partir del día siguiente de la fecha de cese definitivo.
+        </div>
+    `;
+
+    contenedorAlertas.innerHTML = dictamenHTML;
 }
